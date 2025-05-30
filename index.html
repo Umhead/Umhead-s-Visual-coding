@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Umhead's Visual Coding</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: sans-serif; background: #1e1e1e; color: white; display: flex; flex-direction: column; height: 100vh; }
+    header, footer { padding: 10px; background: #292929; }
+    #controls, #log, #blocks, #workspace { padding: 10px; }
+    #workspace, #blocks { flex: 1; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 10px; }
+    .block {
+      background: #333; border: 1px solid #555; padding: 10px; border-radius: 8px; min-width: 200px;
+    }
+    .block input {
+      background: #111; color: #0f0; border: none; border-bottom: 1px solid #888; margin: 2px 0; width: 100%;
+    }
+    #log { background: #111; height: 100px; overflow-y: scroll; font-size: 0.85em; }
+    button, input[type="range"] { margin-right: 5px; }
+    #spriteCanvas { background: #000; width: 100%; height: 300px; margin: 10px 0; }
+    @media (max-width: 600px) {
+      #workspace, #blocks { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h2>Umhead's Visual Coding</h2>
+</header>
+
+<section id="controls">
+  <button onclick="startProject()">Start</button>
+  <button onclick="pauseProject()">Pause</button>
+  <button onclick="toggleFullscreen()">Fullscreen</button>
+  <label>Volume:
+    <input type="range" min="0" max="100" value="50" id="volumeSlider" onchange="changeVolume(this.value)">
+  </label>
+</section>
+
+<canvas id="spriteCanvas"></canvas>
+
+<section id="blocks">
+  <div class="block">
+    <strong>On start</strong><br>
+    Script ID: <input type="text" value="start123">
+  </div>
+  <div class="block">
+    <strong>Detect key</strong><br>
+    Key: <input type="text" value="Space"><br>
+    Do/Not: <input type="text" value="do"><br>
+    Script ID: <input type="text" value="keypress01">
+  </div>
+  <div class="block">
+    <strong>Place sprite at X={}</strong><br>
+    X: <input type="number" value="100"><br>
+    Y: <input type="number" value="150">
+  </div>
+  <div class="block">
+    <strong>Comment</strong><br>
+    <input type="text" value="This is a test comment.">
+  </div>
+</section>
+
+<section id="workspace">
+  <!-- Active blocks will go here -->
+</section>
+
+<section id="log">
+  <div><strong>Console:</strong></div>
+</section>
+
+<footer>
+  <small>Umhead Visual Coding | Version 1.0 Prototype</small>
+</footer>
+
+<script>
+  let running = false;
+  const log = (msg) => {
+    const logBox = document.getElementById('log');
+    const p = document.createElement('div');
+    p.textContent = msg;
+    logBox.appendChild(p);
+    logBox.scrollTop = logBox.scrollHeight;
+  };
+
+  function startProject() {
+    running = true;
+    log("Project started.");
+    try {
+      executeBlocks();
+    } catch (e) {
+      log("Error: " + e.message);
+      running = false;
+    }
+  }
+
+  function pauseProject() {
+    running = false;
+    log("Project paused.");
+  }
+
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  }
+
+  function changeVolume(val) {
+    log("Volume set to " + val);
+  }
+
+  function executeBlocks() {
+    const blocks = document.querySelectorAll('.block');
+    for (const block of blocks) {
+      const title = block.querySelector('strong')?.textContent;
+      const inputs = block.querySelectorAll('input');
+      if (title?.startsWith("Place sprite")) {
+        const x = parseInt(inputs[0].value);
+        const y = parseInt(inputs[1].value);
+        moveSprite(x, y);
+      } else if (title?.startsWith("Detect key")) {
+        const key = inputs[0].value;
+        const doOrNot = inputs[1].value;
+        log(`Listening for key: ${key} (action: ${doOrNot})`);
+        document.addEventListener("keydown", (e) => {
+          if (e.key === key && doOrNot === "do" && running) {
+            log("Key detected: " + key);
+          }
+        });
+      } else if (title?.startsWith("Comment")) {
+        log("// " + inputs[0].value);
+      }
+    }
+  }
+
+  function moveSprite(x, y) {
+    const canvas = document.getElementById('spriteCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "lime";
+    ctx.fillRect(x, y, 50, 50);
+    log(`Sprite moved to X=${x}, Y=${y}`);
+  }
+</script>
+
+</body>
+</html>
